@@ -32,11 +32,15 @@
 
 #include <stdlib.h>
 #include <errno.h>
+#include <stdio.h>
 
 /*
  * TODO: carriage return support
  * FIXME: deallocate everything on failure
  */
+
+/* set this to true/1 if you want colored output */
+bool json_colored = 1;
 
 /* forwards */
 static bool parse_as_value(struct JsonParser* parser, struct Value* out);
@@ -307,4 +311,79 @@ void value_delete(struct Value* const value) {
     }
     value->type = 0;
     free(value);
+}
+
+void print_number(const double number) {
+    if (json_colored) printf("\033[34;1m");
+    printf("%f", number);
+    if (json_colored) printf("\033[0m");
+}
+
+void print_string(const char *string) {
+    if (json_colored) printf("\033[32m");
+
+    printf("'");
+    for (; *string; string++) {
+        switch (*string) {
+        case '\\': printf("\\\\"); break;
+        case '\b': printf("\\b"); break;
+        case '\f': printf("\\f"); break;
+        case '\n': printf("\\n"); break;
+        case '\r': printf("\\r"); break;
+        case '\t': printf("\\t"); break;
+        default: printf("%c", *string);
+        }
+    }
+    printf("'");
+    if (json_colored) printf("\033[0m");
+}
+
+void print_null(void) {
+    if (json_colored) printf("\033[0;1mnull\033[0m");
+    else printf("null");
+}
+
+void print_bool(const bool b) {
+    if (json_colored) printf("\033[33m");
+    printf("%s", b ? "true" : "false");
+    if (json_colored) printf("\033[0m");
+}
+
+void print_array(const struct Array* const array) {
+    uint i;
+    printf("[ ");
+    for (i = 0; i < array->written; i++) {
+        print_value(array_at(array, i));
+        if (i + 1 < array->written)
+            printf(", ");
+    }
+    printf(" ]");
+}
+
+void print_object(const struct Object* const object) {
+    struct Node *node;
+    uint printed, i;
+    printed = 0;
+    printf("{ ");
+    for (i = 0; i < object->allocated; i++) {
+        for (node = object->buckets[i]; node != NULL; node = node->next) {
+            printf("%s: ", node->key);
+            print_value(&node->value);
+            printed++;
+            if (printed < object->pairs)
+                printf(", ");
+        }
+    }
+    printf(" }");
+}
+
+void print_value(const struct Value *const val) {
+    switch (val->type) {
+    case Number: print_number(val->as.number); break;
+    case String: print_string(val->as.string); break;
+    case Array: print_array(val->as.array); break;
+    case Object: print_object(val->as.object); break;
+    case Null: print_null(); break;
+    case Bool: print_bool(val->as.bool_); break;
+    }
 }

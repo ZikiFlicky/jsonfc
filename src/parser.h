@@ -39,6 +39,8 @@ typedef unsigned int uint;
 #define CURRENT_CHAR(p) ((p).stream[(p).idx])
 #define CHAR_AT(p, i) ((p).stream[(p).idx + (i)])
 
+/* set this to true/1 if you want colored output */
+extern bool json_colored;
 
 struct Value {
     enum ValueType {
@@ -69,8 +71,21 @@ void parser_construct(struct JsonParser *parser, char *stream);
 
 struct Value *parse(char *stream);
 
-void string_dealloc(char *string);
-
 void value_delete(struct Value *value);
+
+/* printing functions */
+void print_number(double number);
+
+void print_string(const char *string);
+
+void print_null(void);
+
+void print_bool(bool b);
+
+void print_array(const struct Array* array);
+
+void print_object(const struct Object* object);
+
+void print_value(const struct Value *val);
 
 #endif /* JSON_PARSER_H */
