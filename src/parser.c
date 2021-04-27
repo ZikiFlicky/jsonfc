@@ -40,7 +40,10 @@
  */
 
 /* set this to true/1 if you want colored output */
-bool json_colored = 1;
+bool json_print_colored = 1;
+bool json_print_double_quoted = 0;
+bool json_print_key_as_string = 0;
+
 
 /* forwards */
 static bool parse_as_value(struct JsonParser* parser, struct Value* out);
@@ -314,15 +317,15 @@ void value_delete(struct Value* const value) {
 }
 
 void print_number(const double number) {
-    if (json_colored) printf("\033[34;1m");
+    if (json_print_colored) printf("\033[34;1m");
     printf("%f", number);
-    if (json_colored) printf("\033[0m");
+    if (json_print_colored) printf("\033[0m");
 }
 
 void print_string(const char *string) {
-    if (json_colored) printf("\033[32m");
+    if (json_print_colored) printf("\033[32m");
 
-    printf("'");
+    printf("%c", json_print_double_quoted ? '"' : '\'');
     for (; *string; string++) {
         switch (*string) {
         case '\\': printf("\\\\"); break;
@@ -334,19 +337,19 @@ void print_string(const char *string) {
         default: printf("%c", *string);
         }
     }
-    printf("'");
-    if (json_colored) printf("\033[0m");
+    printf("%c", json_print_double_quoted ? '"' : '\'');
+    if (json_print_colored) printf("\033[0m");
 }
 
 void print_null(void) {
-    if (json_colored) printf("\033[0;1mnull\033[0m");
+    if (json_print_colored) printf("\033[0;1mnull\033[0m");
     else printf("null");
 }
 
 void print_bool(const bool b) {
-    if (json_colored) printf("\033[33m");
+    if (json_print_colored) printf("\033[33m");
     printf("%s", b ? "true" : "false");
-    if (json_colored) printf("\033[0m");
+    if (json_print_colored) printf("\033[0m");
 }
 
 void print_array(const struct Array* const array) {
@@ -367,7 +370,12 @@ void print_object(const struct Object* const object) {
     printf("{ ");
     for (i = 0; i < object->allocated; i++) {
         for (node = object->buckets[i]; node != NULL; node = node->next) {
-            printf("%s: ", node->key);
+            if (json_print_key_as_string)
+                print_string(node->key);
+            else
+                printf("%s", node->key);
+
+            printf(": ");
             print_value(&node->value);
             printed++;
             if (printed < object->pairs)

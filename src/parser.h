@@ -39,8 +39,10 @@ typedef unsigned int uint;
 #define CURRENT_CHAR(p) ((p).stream[(p).idx])
 #define CHAR_AT(p, i) ((p).stream[(p).idx + (i)])
 
-/* set this to true/1 if you want colored output */
-extern bool json_colored;
+/* TODO: order this as a struct */
+extern bool json_print_colored;
+extern bool json_print_double_quoted;
+extern bool json_print_key_as_string;
 
 struct Value {
     enum ValueType {
