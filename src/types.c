@@ -111,6 +111,8 @@ void object_set(struct Object *obj, char *key, struct Value *value) {
 
     while (node != NULL) {
         if (strcmp(key, node->key) == 0) {
+            /* deallocate value if already exists at key */
+            value_delete(&node->value);
             node->value = *value;
             return;
         }
