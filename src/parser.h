@@ -28,13 +28,13 @@
 
 #include "types.h"
 
+#include <stddef.h>
+
 #if __STDC_VERSION__ >= 199901L
 #include <stdbool.h>
 #else
 #define bool unsigned char
 #endif
-
-typedef unsigned int uint;
 
 #define CURRENT_CHAR(p) ((p).stream[(p).idx])
 #define CHAR_AT(p, i) ((p).stream[(p).idx + (i)])
@@ -65,7 +65,7 @@ struct Value {
 
 struct JsonParser {
     char *stream;
-    uint idx, line, column;
+    size_t idx, line, column;
     struct Value *head;
 };
 

@@ -55,15 +55,15 @@ bool array_push(struct Array* const array, struct Value* const value) {
     return 1;
 }
 
-struct Value *array_at(const struct Array* const array, const uint idx) {
+struct Value *array_at(const struct Array* const array, const size_t idx) {
     if (idx < array->written)
         return &array->arr_dump[idx];
     return NULL;
 }
 
 
-static uint object_hash(struct Object *obj, char* const to_hash) {
-    uint value;
+static size_t object_hash(struct Object *obj, char* const to_hash) {
+    size_t value;
     char *cur_idx;
     value = 0;
     for (cur_idx = to_hash; *cur_idx; cur_idx++) {
@@ -89,7 +89,7 @@ static void node_delete(struct Node *node) {
 }
 
 void object_dealloc(struct Object *obj) {
-    uint i;
+    size_t i;
     for (i = 0; i < obj->allocated; i++)
         node_delete(obj->buckets[i]);
     free(obj);
@@ -98,7 +98,7 @@ void object_dealloc(struct Object *obj) {
 void object_set(struct Object *obj, char *key, struct Value *value) {
     struct Node *node;
     struct Node *previous_node;
-    uint hash_result;
+    size_t hash_result;
 
     if (!obj->buckets) {
         obj->buckets = malloc(sizeof(struct Node *) * OBJECT_BUCKET_AMOUNT_DEFAULT);

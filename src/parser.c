@@ -56,8 +56,8 @@ void parser_construct(struct JsonParser* const parser, char* const stream) {
     parser->head = malloc(sizeof(struct Value));
 }
 
-static bool parser_advance(struct JsonParser* const parser, const uint amount) {
-    uint i;
+static bool parser_advance(struct JsonParser* const parser, const size_t amount) {
+    size_t i;
     for (i = 0; i < amount; i++) {
         switch (CURRENT_CHAR(*parser)) {
         case '\0':
@@ -76,7 +76,7 @@ static bool parser_advance(struct JsonParser* const parser, const uint amount) {
 }
 
 static bool parser_clean(struct JsonParser* const parser) {
-    uint start;
+    size_t start;
     start = parser->idx;
     while (CURRENT_CHAR(*parser) == ' '  || CURRENT_CHAR(*parser) == '\n' ||
            CURRENT_CHAR(*parser) == '\t' || CURRENT_CHAR(*parser) == '\r')
@@ -87,7 +87,7 @@ static bool parser_clean(struct JsonParser* const parser) {
 }
 
 static bool match(struct JsonParser* const parser, const char *const stream) {
-    uint i;
+    size_t i;
     for (i = 0; stream[i]; i++)
         if (stream[i] != CHAR_AT(*parser, i))
             return 0;
@@ -109,7 +109,7 @@ static bool parse_as_number(struct JsonParser* const parser, double* const out) 
 }
 
 static bool parse_as_string(struct JsonParser* const parser, char** const out, const bool allow_escapes) {
-    uint write_idx, len;
+    size_t write_idx, len;
     write_idx = 0;
     len = 12;
 
@@ -353,7 +353,7 @@ void print_bool(const bool b) {
 }
 
 void print_array(const struct Array* const array) {
-    uint i;
+    size_t i;
     printf("[ ");
     for (i = 0; i < array->written; i++) {
         print_value(array_at(array, i));
@@ -365,7 +365,7 @@ void print_array(const struct Array* const array) {
 
 void print_object(const struct Object* const object) {
     struct Node *node;
-    uint printed, i;
+    size_t printed, i;
     printed = 0;
     printf("{ ");
     for (i = 0; i < object->allocated; i++) {

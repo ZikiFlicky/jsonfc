@@ -28,12 +28,14 @@
 
 #include "parser.h"
 
+#include <stddef.h>
+
 #define ARRAY_SIZE_START 4
 #define OBJECT_BUCKET_AMOUNT_DEFAULT 8
 
 struct Array {
     struct Value *arr_dump;
-    uint allocated, written;
+    size_t allocated, written;
 };
 
 struct Object {
@@ -42,7 +44,7 @@ struct Object {
         char *key;
         struct Value value;
     } **buckets;
-    uint allocated, pairs;
+    size_t allocated, pairs;
 };
 
 void array_construct(struct Array *array);
@@ -51,7 +53,7 @@ void array_dealloc(struct Array *array);
 
 bool array_push(struct Array *array, struct Value *value);
 
-struct Value *array_at(const struct Array *array, uint idx);
+struct Value *array_at(const struct Array *array, size_t idx);
 
 void object_construct(struct Object *obj);
 
