@@ -40,15 +40,20 @@ void array_dealloc(struct Array* const array) {
     free(array);
 }
 
-bool array_push(struct Array* const array, struct Value* const value) {
+bool array_push(struct Array* const array, const struct Value* const value) {
+    struct Value *tmp;
+
     if (array->allocated == 0) {
         array->allocated = ARRAY_SIZE_START;
-        if ((array->arr_dump = malloc(ARRAY_SIZE_START * sizeof(struct Value))) == NULL)
+        array->arr_dump = malloc(ARRAY_SIZE_START * sizeof(struct Value));
+        if (array->arr_dump == NULL)
             return 0;
-    } else if (array->written >= array->allocated) {
+    } else if (array->written > array->allocated) {
         array->allocated += 8;
-        if ((array->arr_dump = realloc(array->arr_dump, array->allocated * sizeof(struct Value))) == NULL)
+        tmp = realloc(array->arr_dump, array->allocated * sizeof(struct Value));
+        if (tmp == NULL)
             return 0;
+        array->arr_dump = tmp;
     }
     array->arr_dump[array->written] = *value;
     array->written++;
@@ -95,13 +100,15 @@ void object_dealloc(struct Object *obj) {
     free(obj);
 }
 
-void object_set(struct Object *obj, char *key, struct Value *value) {
+bool object_set(struct Object *obj, char *key, struct Value *value) {
     struct Node *node;
     struct Node *previous_node;
     size_t hash_result;
 
     if (!obj->buckets) {
         obj->buckets = malloc(sizeof(struct Node *) * OBJECT_BUCKET_AMOUNT_DEFAULT);
+        if (obj->buckets == NULL)
+            return 0;
         obj->allocated = OBJECT_BUCKET_AMOUNT_DEFAULT;
     }
 
@@ -114,14 +121,18 @@ void object_set(struct Object *obj, char *key, struct Value *value) {
             /* deallocate value if already exists at key */
             value_delete(&node->value);
             node->value = *value;
-            return;
+            return 1;
         }
         previous_node = node;
         node = node->next;
     }
 
     node = malloc(sizeof(struct Node));
+    if (node == NULL)
+        return 0;
     node->key = malloc((strlen(key) + 1) * sizeof(char));
+    if (node->key == NULL)
+        return 0;
     strcpy(node->key, key);
     node->key[strlen(key)] = 0;
     node->value = *value;
@@ -131,6 +142,7 @@ void object_set(struct Object *obj, char *key, struct Value *value) {
     else
         previous_node->next = node;
     obj->pairs++;
+    return 1;
 }
 
 struct Value *object_get(struct Object *obj, char* key) {

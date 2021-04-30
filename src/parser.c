@@ -119,6 +119,9 @@ static bool parse_as_string(struct JsonParser* const parser, char** const out, c
     parser_advance(parser, 1);
     *out = malloc(len * sizeof(char));
 
+    if (*out == NULL)
+        return 0;
+
     while (CURRENT_CHAR(*parser) != '"') {
         if (write_idx >= len) {
             len += 8;
@@ -170,6 +173,10 @@ static bool parse_as_array(struct JsonParser* const parser, struct Array** const
 
     parser_advance(parser, 1);
     array = malloc(sizeof(struct Array));
+
+    if (array == NULL)
+        return 0;
+
     array_construct(array);
 
     while (CURRENT_CHAR(*parser) != ']') {
@@ -206,6 +213,10 @@ static bool parse_as_object(struct JsonParser* const parser, struct Object **out
 
     parser_advance(parser, 1);
     obj = malloc(sizeof(struct Object));
+
+    if (obj == NULL)
+        return 0;
+
     object_construct(obj);
 
     while (CURRENT_CHAR(*parser) != '}') {

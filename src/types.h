@@ -51,13 +51,13 @@ void array_construct(struct Array *array);
 
 void array_dealloc(struct Array *array);
 
-bool array_push(struct Array *array, struct Value *value);
+bool array_push(struct Array *array, const struct Value *value);
 
 struct Value *array_at(const struct Array *array, size_t idx);
 
 void object_construct(struct Object *obj);
 
-void object_set(struct Object *obj, char *key, struct Value *value);
+bool object_set(struct Object *obj, char *key, struct Value *value);
 
 void object_dealloc(struct Object *obj);
 
