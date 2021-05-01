@@ -305,28 +305,6 @@ struct Value *parse(char* const stream) {
     return parser.head;
 }
 
-void value_delete(struct Value* const value) {
-    switch (value->type) {
-    case Number:
-    case Null:
-    case Bool:
-        break;
-    case String:
-        free(value->as.string);
-        break;
-    case Array:
-        array_dealloc(value->as.array);
-        break;
-    case Object:
-        object_dealloc(value->as.object);
-        break;
-    default:
-        return;
-    }
-    value->type = 0;
-    free(value);
-}
-
 void print_number(const double number) {
     if (json_print_colored) printf("\033[34;1m");
     printf("%f", number);

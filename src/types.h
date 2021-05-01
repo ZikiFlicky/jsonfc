@@ -26,12 +26,39 @@
 #ifndef JSON_TYPES_H
 #define JSON_TYPES_H
 
-#include "parser.h"
-
 #include <stddef.h>
+
+#if __STDC_VERSION__ >= 199901L
+#include <stdbool.h>
+#else
+#ifdef bool
+#undef bool
+#endif
+#define bool unsigned char
+#endif
 
 #define ARRAY_SIZE_START 4
 #define OBJECT_BUCKET_AMOUNT_DEFAULT 8
+
+
+struct Value {
+    enum ValueType {
+        Number = 1,
+        String,
+        Array,
+        Object,
+        Null,
+        Bool
+    } type;
+
+    union {
+        double number;
+        char *string;
+        bool bool_;
+        struct Array *array;
+        struct Object *object;
+    } as;
+};
 
 struct Array {
     struct Value *arr_dump;
@@ -47,9 +74,12 @@ struct Object {
     size_t allocated, pairs;
 };
 
+void value_dealloc(struct Value *value);
+
 void array_construct(struct Array *array);
 
 void array_dealloc(struct Array *array);
+
 
 bool array_push(struct Array *array, const struct Value *value);
 

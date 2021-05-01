@@ -30,12 +30,6 @@
 
 #include <stddef.h>
 
-#if __STDC_VERSION__ >= 199901L
-#include <stdbool.h>
-#else
-#define bool unsigned char
-#endif
-
 #define CURRENT_CHAR(p) ((p).stream[(p).idx])
 #define CHAR_AT(p, i) ((p).stream[(p).idx + (i)])
 
@@ -43,25 +37,6 @@
 extern bool json_print_colored;
 extern bool json_print_double_quoted;
 extern bool json_print_key_as_string;
-
-struct Value {
-    enum ValueType {
-        Number = 1,
-        String,
-        Array,
-        Object,
-        Null,
-        Bool
-    } type;
-
-    union {
-        double number;
-        char *string;
-        struct Array *array;
-        struct Object *object;
-        bool bool_;
-    } as;
-};
 
 struct JsonParser {
     char *stream;
@@ -73,7 +48,6 @@ void parser_construct(struct JsonParser *parser, char *stream);
 
 struct Value *parse(char *stream);
 
-void value_delete(struct Value *value);
 
 /* printing functions */
 void print_number(double number);

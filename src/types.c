@@ -29,6 +29,28 @@
 #include <stdlib.h>
 #include <string.h>
 
+void value_dealloc(struct Value *value) {
+    switch (value->type) {
+    case Number:
+    case Null:
+    case Bool:
+        break;
+    case String:
+        free(value->as.string);
+        break;
+    case Array:
+        array_dealloc(value->as.array);
+        break;
+    case Object:
+        object_dealloc(value->as.object);
+        break;
+    default:
+        return;
+    }
+    value->type = 0;
+    free(value);
+}
+
 void array_construct(struct Array *array) {
     array->allocated = 0;
     array->written = 0;
@@ -119,7 +141,7 @@ bool object_set(struct Object *obj, char *key, struct Value *value) {
     while (node != NULL) {
         if (strcmp(key, node->key) == 0) {
             /* deallocate value if already exists at key */
-            value_delete(&node->value);
+            value_dealloc(&node->value);
             node->value = *value;
             return 1;
         }
