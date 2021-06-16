@@ -36,13 +36,14 @@
 
 /*
  * TODO: carriage return support
+ * TODO: unicode support
  * FIXME: deallocate everything on failure
  */
 
-/* set this to true/1 if you want colored output */
-bool json_print_colored = 1;
-bool json_print_double_quoted = 0;
-bool json_print_key_as_string = 0;
+/* set this to true if you want colored output */
+bool json_print_colored = true;
+bool json_print_double_quoted = false;
+bool json_print_key_as_string = false;
 
 
 /* forwards */
@@ -61,7 +62,7 @@ static bool parser_advance(struct JsonParser* const parser, const size_t amount)
     for (i = 0; i < amount; i++) {
         switch (CURRENT_CHAR(*parser)) {
         case '\0':
-            return 0;
+            return false;
         case '\n':
             parser->line++;
             parser->column = 1;
@@ -72,7 +73,7 @@ static bool parser_advance(struct JsonParser* const parser, const size_t amount)
         }
         parser->idx++;
     }
-    return 1;
+    return true;
 }
 
 static bool parser_clean(struct JsonParser* const parser) {
@@ -82,30 +83,30 @@ static bool parser_clean(struct JsonParser* const parser) {
            CURRENT_CHAR(*parser) == '\t' || CURRENT_CHAR(*parser) == '\r')
         parser_advance(parser, 1);
     if (start == parser->idx)
-        return 0; /* didn't clean anything */
-    return 1;
+        return false; /* didn't clean anything */
+    return true;
 }
 
 static bool match(struct JsonParser* const parser, const char *const stream) {
     size_t i;
     for (i = 0; stream[i]; i++)
         if (stream[i] != CHAR_AT(*parser, i))
-            return 0;
+            return false;
     parser_advance(parser, i);
-    return 1;
+    return true;
 }
 
 static bool parse_as_number(struct JsonParser* const parser, double* const out) {
-    /* FIXME: this function shouldn't support 0x, 0o and 0b prefixes in number parsing */
+    /* FIXME: this function shouldn't support extended bases */
     double number;
     char *new_start;
     errno = 0;
     number = strtod(&CURRENT_CHAR(*parser), &new_start);
     if ((new_start == &CURRENT_CHAR(*parser) && number == 0) || errno == ERANGE)
-        return 0;
+        return false;
     parser_advance(parser, new_start - &CURRENT_CHAR(*parser));
     *out = number;
-    return 1;
+    return true;
 }
 
 static bool parse_as_string(struct JsonParser* const parser, char** const out, const bool allow_escapes) {
@@ -114,25 +115,24 @@ static bool parse_as_string(struct JsonParser* const parser, char** const out, c
     len = 12;
 
     if (CURRENT_CHAR(*parser) != '"')
-        return 0;
+        return false;
 
     parser_advance(parser, 1);
     *out = malloc(len * sizeof(char));
 
     if (*out == NULL)
-        return 0;
+        return false;
 
     while (CURRENT_CHAR(*parser) != '"') {
         if (write_idx >= len) {
             len += 8;
             *out = realloc(*out, len * sizeof(char));
             if (*out == NULL)
-                return 0;
+                return false;
         }
-        /* TODO: add unicode and unicode escape sequence support */
         if (CURRENT_CHAR(*parser) == '\\') {
             if (!allow_escapes)
-                return 0;
+                return false;
             switch (CHAR_AT(*parser, 1)) {
             case '\\': (*out)[write_idx] = '\\'; break;
             case '/': (*out)[write_idx] = '/'; break;
@@ -142,7 +142,7 @@ static bool parse_as_string(struct JsonParser* const parser, char** const out, c
             case 'n': (*out)[write_idx] = '\n'; break;
             case 'r': (*out)[write_idx] = '\r'; break;
             case 't': (*out)[write_idx] = '\t'; break;
-            default: return 0;
+            default: return false;
             }
             parser_advance(parser, 2);
             write_idx++;
@@ -150,10 +150,10 @@ static bool parse_as_string(struct JsonParser* const parser, char** const out, c
         }
 
         if (CURRENT_CHAR(*parser) == '\n')
-            return 0;
+            return false;
 
         if (CURRENT_CHAR(*parser) == '\0')
-            return 0;
+            return false;
 
         (*out)[write_idx] = CURRENT_CHAR(*parser);
         parser_advance(parser, 1);
@@ -161,7 +161,7 @@ static bool parse_as_string(struct JsonParser* const parser, char** const out, c
     }
     parser_advance(parser, 1);
     *out = realloc(*out, write_idx * sizeof(char));
-    return 1;
+    return true;
 }
 
 static bool parse_as_array(struct JsonParser* const parser, struct Array** const out) {
@@ -169,13 +169,13 @@ static bool parse_as_array(struct JsonParser* const parser, struct Array** const
     struct Value tmp_val;
 
     if (CURRENT_CHAR(*parser) != '[')
-        return 0;
+        return false;
 
     parser_advance(parser, 1);
     array = malloc(sizeof(struct Array));
 
     if (array == NULL)
-        return 0;
+        return false;
 
     array_construct(array);
 
@@ -184,23 +184,23 @@ static bool parse_as_array(struct JsonParser* const parser, struct Array** const
             continue;
 
         if (CURRENT_CHAR(*parser) == '\0')
-            return 0;
+            return false;
 
         if (!parse_as_value(parser, &tmp_val))
-            return 0;
+            return false;
 
         if (CURRENT_CHAR(*parser) == ',') {
             parser_advance(parser, 1);
             parser_clean(parser);
             if (CURRENT_CHAR(*parser) == '}')
-                return 0;
+                return false;
         }
         array_push(array, &tmp_val);
     }
 
     parser_advance(parser, 1); /* advance '}' */
     *out = array;
-    return 1;
+    return true;
 }
 
 static bool parse_as_object(struct JsonParser* const parser, struct Object **out) {
@@ -209,13 +209,13 @@ static bool parse_as_object(struct JsonParser* const parser, struct Object **out
     struct Value tmp_val;
 
     if (CURRENT_CHAR(*parser) != '{')
-        return 0;
+        return false;
 
     parser_advance(parser, 1);
     obj = malloc(sizeof(struct Object));
 
     if (obj == NULL)
-        return 0;
+        return false;
 
     object_construct(obj);
 
@@ -224,21 +224,21 @@ static bool parse_as_object(struct JsonParser* const parser, struct Object **out
             continue;
 
         if (CURRENT_CHAR(*parser) == '\0')
-            return 0;
+            return false;
 
-        if (!parse_as_string(parser, &tmp_key, 0))
-            return 0;
+        if (!parse_as_string(parser, &tmp_key, false))
+            return false;
 
         parser_clean(parser);
 
         if (CURRENT_CHAR(*parser) != ':')
-            return 0;
+            return false;
 
         parser_advance(parser, 1);
         parser_clean(parser);
 
         if (!parse_as_value(parser, &tmp_val))
-            return 0;
+            return false;
 
         object_set(obj, tmp_key, &tmp_val);
         parser_clean(parser);
@@ -247,54 +247,53 @@ static bool parse_as_object(struct JsonParser* const parser, struct Object **out
             parser_advance(parser, 1);
             parser_clean(parser);
             if (CURRENT_CHAR(*parser) == '}')
-                return 0;
+                return false;
         }
     }
 
     parser_advance(parser, 1);
     parser_clean(parser);
     *out = obj;
-    return 1;
+    return true;
 }
 
 static bool parse_as_null(struct JsonParser* const parser) {
     if (match(parser, "null"))
-        return 1;
-    return 0;
+        return true;
+    return false;
 }
 
 static bool parse_as_bool(struct JsonParser* const parser, bool* const out) {
     if (match(parser, "true")) {
-        *out = 1;
-        return 1;
+        *out = true;
+        return true;
     }
     if (match(parser, "false")) {
-        *out = 0;
-        return 1;
+        *out = false;
+        return true;
     }
-    return 0;
+    return false;
 }
 
 static bool parse_as_value(struct JsonParser* const parser, struct Value* const out) {
     struct Value tmp;
     parser_clean(parser);
     if (parse_as_number(parser, &out->as.number)) out->type = Number;
-    else if (parse_as_string(parser, &out->as.string, 1)) out->type = String;
+    else if (parse_as_string(parser, &out->as.string, true)) out->type = String;
     else if (parse_as_array(parser, &out->as.array)) out->type = Array;
     else if (parse_as_object(parser, &out->as.object)) out->type = Object;
     else if (parse_as_null(parser)) out->type = Null;
     else if (parse_as_bool(parser, &out->as.bool_)) out->type = Bool;
-    else return 0; /* failed to parse as anything :^( */
+    else return false; /* failed to parse as anything :^( */
     parser_clean(parser);
 
-    /* FIXME: this is a little repetitive */
-    if (parse_as_number(parser, &tmp.as.number)) return 0;
-    if (parse_as_string(parser, &tmp.as.string, 1)) return 0;
-    if (parse_as_array(parser, &tmp.as.array)) return 0;
-    if (parse_as_object(parser, &tmp.as.object)) return 0;
-    if (parse_as_null(parser)) return 0;
-    if (parse_as_bool(parser, &tmp.as.bool_)) return 0;
-    return 1;
+    if (parse_as_number(parser, &tmp.as.number))       return false;
+    if (parse_as_string(parser, &tmp.as.string, true)) return false;
+    if (parse_as_array(parser, &tmp.as.array))         return false;
+    if (parse_as_object(parser, &tmp.as.object))       return false;
+    if (parse_as_null(parser))                         return false;
+    if (parse_as_bool(parser, &tmp.as.bool_))          return false;
+    return true;
 }
 
 struct Value *parse(char* const stream) {
@@ -384,3 +383,4 @@ void print_value(const struct Value *const val) {
     case Bool: print_bool(val->as.bool_); break;
     }
 }
+
