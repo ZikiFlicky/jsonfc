@@ -23,6 +23,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef PARSER_FILEREADER_H
+#define PARSER_FILEREADER_H
+
 #include "types.h"
 
 #include <stdio.h>
@@ -43,4 +46,6 @@ bool filereader_close_stream(struct FileReader *fr);
 bool filereader_can_advance(struct FileReader *fr);
 
 bool filereader_advance(struct FileReader *fr);
+
+#endif /* PARSER_FILEREADER_H */
 
