@@ -39,6 +39,12 @@ bool filereader_open_stream(struct FileReader *fr, const char *filename) {
     return true;
 }
 
+bool filereader_close_stream(struct FileReader *fr) {
+    if (fclose(fr->stream) == 0)
+        return true;
+    return false;
+}
+
 static void filereader_reset_buffer(struct FileReader *fr) {
     size_t i;
     for (i = 0; i < BUFFER_SIZE+1; ++i)

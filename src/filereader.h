@@ -38,6 +38,8 @@ struct FileReader {
 
 bool filereader_open_stream(struct FileReader *fr, const char *filename);
 
+bool filereader_close_stream(struct FileReader *fr);
+
 bool filereader_can_advance(struct FileReader *fr);
 
 bool filereader_advance(struct FileReader *fr);
