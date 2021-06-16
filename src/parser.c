@@ -31,7 +31,6 @@
 #include "parser.h"
 
 #include <stdlib.h>
-#include <errno.h>
 #include <stdio.h>
 
 /*
@@ -99,12 +98,11 @@ static bool match(struct JsonParser* const parser, const char *const stream) {
 static bool parse_as_number(struct JsonParser* const parser, double* const out) {
     /* FIXME: this function shouldn't support extended bases */
     double number;
-    char *new_start;
-    errno = 0;
-    number = strtod(&CURRENT_CHAR(*parser), &new_start);
-    if ((new_start == &CURRENT_CHAR(*parser) && number == 0) || errno == ERANGE)
+    char *end;
+    number = strtod(&CURRENT_CHAR(*parser), &end);
+    if (end == &CURRENT_CHAR(*parser) && number == 0)
         return false;
-    parser_advance(parser, new_start - &CURRENT_CHAR(*parser));
+    parser_advance(parser, end - &CURRENT_CHAR(*parser));
     *out = number;
     return true;
 }
