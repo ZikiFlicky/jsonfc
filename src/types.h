@@ -29,12 +29,11 @@
 #include <stddef.h>
 
 #if __STDC_VERSION__ >= 199901L
-#include <stdbool.h>
+# include <stdbool.h>
 #else
-#ifdef bool
-#undef bool
-#endif
-#define bool unsigned char
+# define bool unsigned char
+# define true 1
+# define false 0
 #endif
 
 #define ARRAY_SIZE_START 4
