@@ -190,13 +190,13 @@ static bool parse_as_array(struct JsonParser* const parser, struct Array** const
         if (CURRENT_CHAR(*parser) == ',') {
             parser_advance(parser, 1);
             parser_clean(parser);
-            if (CURRENT_CHAR(*parser) == '}')
+            if (CURRENT_CHAR(*parser) == ']')
                 return false;
         }
         array_push(array, &tmp_val);
     }
 
-    parser_advance(parser, 1); /* advance '}' */
+    parser_advance(parser, 1); /* advance ']' */
     *out = array;
     return true;
 }
