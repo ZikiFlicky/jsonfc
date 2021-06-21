@@ -28,11 +28,18 @@
 
 static bool filereader_load_buffer(struct FileReader *fr);
 
+static bool filereader_stream_exists(struct FileReader *fr) {
+    if (fr->stream == NULL)
+        return false;
+
+    return true;
+}
+
 bool filereader_open_stream(struct FileReader *fr, const char *filename) {
     fr->stream = fopen(filename, "r");
 
     /* failed to to open? */
-    if (fr->stream == NULL)
+    if (!filereader_stream_exists(fr))
         return false;
 
     /* load the buffer once, so we can start working with the data */
@@ -42,6 +49,9 @@ bool filereader_open_stream(struct FileReader *fr, const char *filename) {
 }
 
 bool filereader_close_stream(struct FileReader *fr) {
+    if (!filereader_stream_exists(fr))
+        return false;
+
     if (fclose(fr->stream) == 0)
         return true;
 
@@ -57,6 +67,9 @@ static void filereader_reset_buffer(struct FileReader *fr) {
 }
 
 static bool filereader_load_buffer(struct FileReader *fr) {
+    if (!filereader_stream_exists(fr))
+        return false;
+
     if (feof(fr->stream))
         return false;
 
@@ -67,6 +80,9 @@ static bool filereader_load_buffer(struct FileReader *fr) {
 }
 
 bool filereader_can_advance(struct FileReader *fr) {
+    if (!filereader_stream_exists(fr))
+        return false;
+
     if (FR_CURRENT_CHAR(*fr) == '\0' && feof(fr->stream))
         return false;
 
@@ -74,7 +90,12 @@ bool filereader_can_advance(struct FileReader *fr) {
 }
 
 bool filereader_advance(struct FileReader *fr, size_t steps) {
-    size_t start = ftell(fr->stream);
+    size_t start;
+
+    if (!filereader_stream_exists(fr))
+        return false;
+
+    start = ftell(fr->stream);
 
     while (steps --> 0) {
         if (!filereader_can_advance(fr)) {
