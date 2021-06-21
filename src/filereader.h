@@ -45,7 +45,7 @@ bool filereader_close_stream(struct FileReader *fr);
 
 bool filereader_can_advance(struct FileReader *fr);
 
-bool filereader_advance(struct FileReader *fr);
+bool filereader_advance(struct FileReader *fr, size_t steps);
 
 #endif /* PARSER_FILEREADER_H */
 

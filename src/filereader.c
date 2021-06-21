@@ -30,23 +30,28 @@ static bool filereader_load_buffer(struct FileReader *fr);
 
 bool filereader_open_stream(struct FileReader *fr, const char *filename) {
     fr->stream = fopen(filename, "r");
+
     /* failed to to open? */
     if (fr->stream == NULL)
         return false;
-    /* FIXME: not sure this is the best approach */
+
     /* load the buffer once, so we can start working with the data */
     filereader_load_buffer(fr);
+
     return true;
 }
 
 bool filereader_close_stream(struct FileReader *fr) {
     if (fclose(fr->stream) == 0)
         return true;
+
     return false;
 }
 
 static void filereader_reset_buffer(struct FileReader *fr) {
     size_t i;
+
+    fr->buff_idx = 0;
     for (i = 0; i < BUFFER_SIZE+1; ++i)
         fr->buffer[i] = '\0';
 }
@@ -54,29 +59,35 @@ static void filereader_reset_buffer(struct FileReader *fr) {
 static bool filereader_load_buffer(struct FileReader *fr) {
     if (feof(fr->stream))
         return false;
-    fr->buff_idx = 0;
+
     filereader_reset_buffer(fr);
     fread(fr->buffer, 1, BUFFER_SIZE, fr->stream);
+
     return true;
 }
 
 bool filereader_can_advance(struct FileReader *fr) {
     if (FR_CURRENT_CHAR(*fr) == '\0' && feof(fr->stream))
         return false;
+
     return true;
 }
 
-bool filereader_advance(struct FileReader *fr) {
-   /* move forward once */
-    ++fr->buff_idx;
-   /* is end of buffer? */
-    if (FR_CURRENT_CHAR(*fr) == '\0') {
-        /* can you load into the buffer? */
-        if (filereader_load_buffer(fr))
-            return true;
-        else
+bool filereader_advance(struct FileReader *fr, size_t steps) {
+    size_t start = ftell(fr->stream);
+
+    while (steps --> 0) {
+        if (!filereader_can_advance(fr)) {
+            fseek(fr->stream, start, SEEK_SET);
+            filereader_load_buffer(fr);
             return false;
+        }
+
+        if (FR_CURRENT_CHAR(*fr) == '\0')
+            filereader_load_buffer(fr);
+        ++fr->buff_idx;
     }
+
     return true;
 }
 
