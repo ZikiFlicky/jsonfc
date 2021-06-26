@@ -26,19 +26,37 @@
 #include "types.h"
 #include "filereader.h"
 
+#include <assert.h>
+#include <stdio.h>
+
 static bool filereader_load_buffer(struct FileReader *fr);
 
-static bool filereader_stream_exists(struct FileReader *fr) {
+bool filereader_stream_exists(struct FileReader *fr) {
     if (fr->stream == NULL)
         return false;
 
     return true;
 }
 
+/*
+  returns the current index relative to ftell.
+  used to check if something advanced
+ */
+size_t filereader_current_idx(struct FileReader *fr) {
+    if (!filereader_stream_exists(fr))
+        assert(false); /* TODO */
+
+    return ftell(fr->stream) - BUFFER_SIZE + fr->buff_idx;
+}
+
+/*
+  opens the stream on *fr, loads the buffer and returns a boolean specifying
+  if opening the buffer was successful
+ */
 bool filereader_open_stream(struct FileReader *fr, const char *filename) {
     fr->stream = fopen(filename, "r");
 
-    /* failed to to open? */
+    /* failed to open? */
     if (!filereader_stream_exists(fr))
         return false;
 
@@ -48,24 +66,23 @@ bool filereader_open_stream(struct FileReader *fr, const char *filename) {
     return true;
 }
 
-bool filereader_close_stream(struct FileReader *fr) {
-    if (!filereader_stream_exists(fr))
-        return false;
-
-    if (fclose(fr->stream) == 0)
-        return true;
-
-    return false;
-}
-
+/*
+  fills the buffer with 0's, moves the buffer index to 0 and
+  the loaded counter to 0
+ */
 static void filereader_reset_buffer(struct FileReader *fr) {
     size_t i;
 
-    fr->buff_idx = 0;
     for (i = 0; i < BUFFER_SIZE+1; ++i)
         fr->buffer[i] = '\0';
+
+    fr->buff_idx = 0;
 }
 
+/*
+  a helper for loading a new buffer.
+  returns true if it succeeded loading a new buffer
+ */
 static bool filereader_load_buffer(struct FileReader *fr) {
     if (!filereader_stream_exists(fr))
         return false;
@@ -74,12 +91,32 @@ static bool filereader_load_buffer(struct FileReader *fr) {
         return false;
 
     filereader_reset_buffer(fr);
-    fread(fr->buffer, 1, BUFFER_SIZE, fr->stream);
+    fread(fr->buffer, BUFFER_SIZE, 1, fr->stream);
 
     return true;
 }
 
-bool filereader_can_advance(struct FileReader *fr) {
+/*
+  closes the stream and returns a boolean saying if it was
+  successful.
+ */
+bool filereader_close_stream(struct FileReader *fr) {
+    if (!filereader_stream_exists(fr))
+        return false;
+
+    if (fclose(fr->stream) != 0)
+        return false;
+
+    filereader_reset_buffer(fr);
+
+    return true;
+}
+
+/*
+  returns a boolean value indicating if you had reached a \0 on file and on buffer,
+  meaning that you can't advance anymore, not even one
+ */
+bool filereader_readable(struct FileReader *fr) {
     if (!filereader_stream_exists(fr))
         return false;
 
@@ -89,25 +126,71 @@ bool filereader_can_advance(struct FileReader *fr) {
     return true;
 }
 
+/*
+  advance steps times. i.e move the file index forward `steps` times
+  will return false on fail and true on success
+ */
 bool filereader_advance(struct FileReader *fr, size_t steps) {
     size_t start;
 
     if (!filereader_stream_exists(fr))
         return false;
 
-    start = ftell(fr->stream);
+    start = filereader_current_idx(fr);
 
     while (steps --> 0) {
-        if (!filereader_can_advance(fr)) {
-            fseek(fr->stream, start, SEEK_SET);
-            filereader_load_buffer(fr);
+        if (!filereader_readable(fr)) {
+            filereader_set_idx(fr, start);
             return false;
         }
 
+        ++fr->buff_idx;
+
         if (FR_CURRENT_CHAR(*fr) == '\0')
             filereader_load_buffer(fr);
-        ++fr->buff_idx;
     }
+
+    return true;
+}
+
+/*
+  given a FileReader and a relative index, this function should tell you
+  what character is present in a certain index.
+  will return \0 at fail, or at end of reading.
+ */
+char filereader_char_at(struct FileReader *fr, size_t rel_idx) {
+    size_t start;
+    char c;
+
+    /* validate that there is fr->stream */
+    if (!filereader_stream_exists(fr))
+        return '\0';
+
+    /* set the place to return to */
+    start = filereader_current_idx(fr);
+
+    if (filereader_advance(fr, rel_idx))
+        c = FR_CURRENT_CHAR(*fr);
+    else
+        c = '\0';
+
+    /* go back to original place and load it into the buffer */
+    filereader_set_idx(fr, start);
+
+    /* finally, return the character */
+    return c;
+}
+
+/*
+  FIXME: check failure
+ */
+bool filereader_set_idx(struct FileReader *fr, size_t idx) {
+    if (!filereader_stream_exists(fr))
+        return false;
+
+    /* move to the new location and load the buffer */
+    fseek(fr->stream, idx, SEEK_SET);
+    filereader_load_buffer(fr);
 
     return true;
 }

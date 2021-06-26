@@ -39,13 +39,21 @@ struct FileReader {
     size_t buff_idx;
 };
 
+size_t filereader_current_idx(struct FileReader *fr);
+
+bool filereader_set_idx(struct FileReader *fr, size_t idx);
+
 bool filereader_open_stream(struct FileReader *fr, const char *filename);
 
 bool filereader_close_stream(struct FileReader *fr);
 
-bool filereader_can_advance(struct FileReader *fr);
+bool filereader_readable(struct FileReader *fr);
 
 bool filereader_advance(struct FileReader *fr, size_t steps);
+
+char filereader_char_at(struct FileReader *fr, size_t rel_idx);
+
+bool filereader_stream_exists(struct FileReader *fr);
 
 #endif /* PARSER_FILEREADER_H */
 
