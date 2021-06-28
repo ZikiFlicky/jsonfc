@@ -36,7 +36,6 @@
 # define false 0
 #endif
 
-#define ARRAY_SIZE_START 4
 #define OBJECT_BUCKET_AMOUNT_DEFAULT 8
 
 
@@ -77,12 +76,11 @@ void value_dealloc(struct Value *value);
 
 void array_construct(struct Array *array);
 
-void array_dealloc(struct Array *array);
+void array_dealloc(struct Array* const array);
 
+bool array_push(struct Array* const array, struct Value *value);
 
-bool array_push(struct Array *array, const struct Value *value);
-
-struct Value *array_at(const struct Array *array, size_t idx);
+struct Value *array_at(const struct Array* const array, const size_t idx);
 
 void object_construct(struct Object *obj);
 

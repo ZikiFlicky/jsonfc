@@ -46,7 +46,7 @@ bool json_print_key_as_string = false;
 
 
 /* forwards */
-static bool parse_as_value(struct JsonParser* parser, struct Value* out);
+static bool parse_as_value(struct JsonParser *parser, struct Value* const out);
 
 void parser_construct(struct JsonParser* const parser, char* const stream) {
     parser->stream = stream;
@@ -273,7 +273,7 @@ static bool parse_as_bool(struct JsonParser* const parser, bool* const out) {
     return false;
 }
 
-static bool parse_as_value(struct JsonParser* const parser, struct Value* const out) {
+static bool parse_as_value(struct JsonParser *parser, struct Value* const out) {
     struct Value tmp;
     parser_clean(parser);
     if (parse_as_number(parser, &out->as.number)) out->type = Number;
@@ -302,7 +302,7 @@ struct Value *parse(char* const stream) {
     return parser.head;
 }
 
-struct Value *parse_file(const char *filename) {
+struct Value *parse_file(char* const filename) {
     FILE *fd = fopen(filename, "r");
     size_t file_size;
     char *buffer;
@@ -371,7 +371,7 @@ void print_bool(const bool b) {
     if (json_print_colored) printf("\033[0m");
 }
 
-void print_array(const struct Array* const array) {
+void print_array(const struct Array *array) {
     size_t i;
     printf("[ ");
     for (i = 0; i < array->written; i++) {
@@ -382,7 +382,7 @@ void print_array(const struct Array* const array) {
     printf(" ]");
 }
 
-void print_object(const struct Object* const object) {
+void print_object(const struct Object *object) {
     struct Node *node;
     size_t printed, i;
     printed = 0;
@@ -404,7 +404,7 @@ void print_object(const struct Object* const object) {
     printf(" }");
 }
 
-void print_value(const struct Value *const val) {
+void print_value(const struct Value *val) {
     switch (val->type) {
     case Number: print_number(val->as.number); break;
     case String: print_string(val->as.string); break;

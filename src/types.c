@@ -47,6 +47,7 @@ void value_dealloc(struct Value *value) {
     default:
         return;
     }
+
     value->type = 0;
     free(value);
 }
@@ -62,27 +63,25 @@ void array_dealloc(struct Array* const array) {
     free(array);
 }
 
-bool array_push(struct Array* const array, const struct Value* const value) {
+bool array_push(struct Array* const array, struct Value *value) {
     struct Value *tmp_heap;
 
-    /* didn't start allocating yet? */
-    if (array->allocated == 0) {
-        /* set size to the start size and start allocating */
-        array->allocated = ARRAY_SIZE_START;
-        array->arr_dump = malloc(ARRAY_SIZE_START * sizeof(struct Value));
-        /* check for allocation fail */
-        if (array->arr_dump == NULL)
-            return false;
-    } else if (array->written >= array->allocated) {
+    if (array->written >= array->allocated) {
         /* change allocation to be 8 blocks bigger and realloc to the new size */
         array->allocated += 8;
         tmp_heap = realloc(array->arr_dump, array->allocated * sizeof(struct Value));
-        if (tmp_heap == NULL)
+
+        if (tmp_heap == NULL) {
+            array->allocated -= 8;
             return false;
+        }
+
         array->arr_dump = tmp_heap;
     }
+
     array->arr_dump[array->written] = *value;
-    array->written++;
+    ++array->written;
+
     return true;
 }
 
@@ -181,3 +180,4 @@ struct Value *object_get(struct Object *obj, char* key) {
     }
     return NULL;
 }
+

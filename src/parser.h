@@ -44,24 +44,24 @@ struct JsonParser {
     struct Value *head;
 };
 
-void parser_construct(struct JsonParser *parser, char *stream);
+void parser_construct(struct JsonParser* const parser, char* const stream);
 
-struct Value *parse(char *stream);
+struct Value *parse(char* const stream);
 
-struct Value *parse_file(const char *filename);
+struct Value *parse_file(char* const filename);
 
 /* printing functions */
-void print_number(double number);
+void print_number(const double number);
 
 void print_string(const char *string);
 
 void print_null(void);
 
-void print_bool(bool b);
+void print_bool(const bool b);
 
-void print_array(const struct Array* array);
+void print_array(const struct Array *array);
 
-void print_object(const struct Object* object);
+void print_object(const struct Object *object);
 
 void print_value(const struct Value *val);
 
