@@ -58,52 +58,60 @@ void parser_construct(struct JsonParser* const parser, char* const stream) {
 
 static bool parser_advance(struct JsonParser* const parser, const size_t amount) {
     size_t i;
-    for (i = 0; i < amount; i++) {
+
+    for (i = 0; i < amount; ++i) {
         switch (CURRENT_CHAR(*parser)) {
         case '\0':
             return false;
         case '\n':
-            parser->line++;
+            ++parser->line;
             parser->column = 1;
             break;
         default:
-            parser->column++;
+            ++parser->column;
             break;
         }
-        parser->idx++;
+        ++parser->idx;
     }
+
     return true;
 }
 
 static bool parser_clean(struct JsonParser* const parser) {
-    size_t start;
-    start = parser->idx;
+    size_t start = parser->idx;
+
     while (CURRENT_CHAR(*parser) == ' '  || CURRENT_CHAR(*parser) == '\n' ||
            CURRENT_CHAR(*parser) == '\t' || CURRENT_CHAR(*parser) == '\r')
         parser_advance(parser, 1);
+
     if (start == parser->idx)
         return false; /* didn't clean anything */
+
     return true;
 }
 
 static bool match(struct JsonParser* const parser, const char *const stream) {
     size_t i;
-    for (i = 0; stream[i]; i++)
+
+    for (i = 0; stream[i]; ++i)
         if (stream[i] != CHAR_AT(*parser, i))
             return false;
+
     parser_advance(parser, i);
     return true;
 }
 
 static bool parse_as_number(struct JsonParser* const parser, double* const out) {
     /* FIXME: this function shouldn't support extended bases */
-    double number;
     char *end;
-    number = strtod(&CURRENT_CHAR(*parser), &end);
+    double number = strtod(&CURRENT_CHAR(*parser), &end);
+
     if (end == &CURRENT_CHAR(*parser) && number == 0)
         return false;
+
     parser_advance(parser, end - &CURRENT_CHAR(*parser));
     *out = number;
+
     return true;
 }
 
@@ -143,7 +151,7 @@ static bool parse_as_string(struct JsonParser* const parser, char** const out, c
             default: return false;
             }
             parser_advance(parser, 2);
-            write_idx++;
+            ++write_idx;
             continue;
         }
 
@@ -155,8 +163,9 @@ static bool parse_as_string(struct JsonParser* const parser, char** const out, c
 
         (*out)[write_idx] = CURRENT_CHAR(*parser);
         parser_advance(parser, 1);
-        write_idx++;
+        ++write_idx;
     }
+
     parser_advance(parser, 1);
     *out = realloc(*out, write_idx * sizeof(char));
     return true;
@@ -193,7 +202,7 @@ static bool parse_as_array(struct JsonParser* const parser, struct Array** const
             if (CURRENT_CHAR(*parser) == ']')
                 return false;
         }
-        array_push(array, &tmp_val);
+        array_push(array, tmp_val);
     }
 
     parser_advance(parser, 1); /* advance ']' */
@@ -297,8 +306,10 @@ static bool parse_as_value(struct JsonParser *parser, struct Value* const out) {
 struct Value *parse(char* const stream) {
     struct JsonParser parser;
     parser_construct(&parser, stream);
+
     if (!parse_as_value(&parser, parser.head))
         return NULL;
+
     return parser.head;
 }
 
@@ -345,7 +356,7 @@ void print_string(const char *string) {
     if (json_print_colored) printf("\033[32m");
 
     printf("%c", json_print_double_quoted ? '"' : '\'');
-    for (; *string; string++) {
+    for (; *string; ++string) {
         switch (*string) {
         case '\\': printf("\\\\"); break;
         case '\b': printf("\\b"); break;
@@ -356,6 +367,7 @@ void print_string(const char *string) {
         default: printf("%c", *string);
         }
     }
+
     printf("%c", json_print_double_quoted ? '"' : '\'');
     if (json_print_colored) printf("\033[0m");
 }
@@ -373,8 +385,9 @@ void print_bool(const bool b) {
 
 void print_array(const struct Array *array) {
     size_t i;
+
     printf("[ ");
-    for (i = 0; i < array->written; i++) {
+    for (i = 0; i < array->written; ++i) {
         print_value(array_at(array, i));
         if (i + 1 < array->written)
             printf(", ");
@@ -385,9 +398,10 @@ void print_array(const struct Array *array) {
 void print_object(const struct Object *object) {
     struct Node *node;
     size_t printed, i;
+
     printed = 0;
     printf("{ ");
-    for (i = 0; i < object->allocated; i++) {
+    for (i = 0; i < object->allocated; ++i) {
         for (node = object->buckets[i]; node != NULL; node = node->next) {
             if (json_print_key_as_string)
                 print_string(node->key);
@@ -396,7 +410,7 @@ void print_object(const struct Object *object) {
 
             printf(": ");
             print_value(&node->value);
-            printed++;
+            ++printed;
             if (printed < object->pairs)
                 printf(", ");
         }

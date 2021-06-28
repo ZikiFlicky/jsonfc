@@ -63,7 +63,7 @@ void array_dealloc(struct Array* const array) {
     free(array);
 }
 
-bool array_push(struct Array* const array, struct Value *value) {
+bool array_push(struct Array* const array, struct Value value) {
     struct Value *tmp_heap;
 
     if (array->written >= array->allocated) {
@@ -79,7 +79,7 @@ bool array_push(struct Array* const array, struct Value *value) {
         array->arr_dump = tmp_heap;
     }
 
-    array->arr_dump[array->written] = *value;
+    array->arr_dump[array->written] = value;
     ++array->written;
 
     return true;
@@ -93,14 +93,15 @@ struct Value *array_at(const struct Array* const array, const size_t idx) {
 
 
 static size_t object_hash(struct Object *obj, char* const to_hash) {
-    size_t value;
+    size_t value = 0;
     char *cur_idx;
-    value = 0;
-    for (cur_idx = to_hash; *cur_idx; cur_idx++) {
+
+    for (cur_idx = to_hash; *cur_idx; ++cur_idx) {
         value *= 256;
         value += *cur_idx;
         value %= obj->allocated;
     }
+
     return value;
 }
 
@@ -120,7 +121,7 @@ static void node_delete(struct Node *node) {
 
 void object_dealloc(struct Object *obj) {
     size_t i;
-    for (i = 0; i < obj->allocated; i++)
+    for (i = 0; i < obj->allocated; ++i)
         node_delete(obj->buckets[i]);
     free(obj);
 }
@@ -153,11 +154,14 @@ bool object_set(struct Object *obj, char *key, struct Value *value) {
     }
 
     node = malloc(sizeof(struct Node));
+
     if (node == NULL)
         return false;
+
     node->key = malloc((strlen(key) + 1) * sizeof(char));
     if (node->key == NULL)
         return false;
+
     strcpy(node->key, key);
     node->key[strlen(key)] = 0;
     node->value = *value;
@@ -166,18 +170,21 @@ bool object_set(struct Object *obj, char *key, struct Value *value) {
         obj->buckets[hash_result] = node;
     else
         previous_node->next = node;
-    obj->pairs++;
+
+    ++obj->pairs;
     return true;
 }
 
 struct Value *object_get(struct Object *obj, char* key) {
     struct Node *node;
+
     if (obj->buckets == NULL) /* not yet allocated (object_set wasn't yet called) */
         return NULL;
     for (node = obj->buckets[object_hash(obj, key)]; node != NULL; node = node->next) {
         if (strcmp(key, node->key) == 0)
             return &node->value;
     }
+
     return NULL;
 }
 

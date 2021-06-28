@@ -78,7 +78,7 @@ void array_construct(struct Array *array);
 
 void array_dealloc(struct Array* const array);
 
-bool array_push(struct Array* const array, struct Value *value);
+bool array_push(struct Array* const array, struct Value value);
 
 struct Value *array_at(const struct Array* const array, const size_t idx);
 
