@@ -302,6 +302,39 @@ struct Value *parse(char* const stream) {
     return parser.head;
 }
 
+struct Value *parse_file(const char *filename) {
+    FILE *fd = fopen(filename, "r");
+    size_t file_size;
+    char *buffer;
+    struct Value *result;
+
+    /* failed to open file */
+    if (fd == NULL)
+        return NULL;
+
+    /* move to end and get the index at the end (get filesize) */
+    fseek(fd, 0, SEEK_END);
+    file_size = ftell(fd);
+
+    /* allocate a big enough buffer */
+    buffer = malloc(sizeof(char) * (file_size + 1));
+    if (buffer == NULL) {
+        fclose(fd);
+        return NULL;
+    }
+
+    /* go back to the start, so we can start reading */
+    fseek(fd, 0, SEEK_SET);
+
+    fread(buffer, 1, file_size, fd);
+    result = parse(buffer);
+
+    /* free buffer */
+    free(buffer);
+
+    return result;
+}
+
 void print_number(const double number) {
     if (json_print_colored) printf("\033[34;1m");
     printf("%f", number);

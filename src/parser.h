@@ -48,6 +48,7 @@ void parser_construct(struct JsonParser *parser, char *stream);
 
 struct Value *parse(char *stream);
 
+struct Value *parse_file(const char *filename);
 
 /* printing functions */
 void print_number(double number);
